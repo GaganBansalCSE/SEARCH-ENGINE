@@ -49,21 +49,21 @@ function escapeRegex(str: string): string {
 export function extractExperience(text: string): { min: number; max: number } {
   const lower = text.toLowerCase();
 
-  // "X+ years"
-  const plusMatch = lower.match(/(\d+)\+\s*(?:years?|yrs?)/);
+  // "X+ years" — bounded digit match avoids ReDoS
+  const plusMatch = lower.match(/(\d{1,2})\+[ \t]*(?:years?|yrs?)/);
   if (plusMatch) {
     const min = parseInt(plusMatch[1], 10);
     return { min, max: min + 5 };
   }
 
   // "X-Y years"
-  const rangeMatch = lower.match(/(\d+)\s*[-–to]+\s*(\d+)\s*(?:years?|yrs?)/);
+  const rangeMatch = lower.match(/(\d{1,2})[ \t]*[-–][ \t]*(\d{1,2})[ \t]*(?:years?|yrs?)/);
   if (rangeMatch) {
     return { min: parseInt(rangeMatch[1], 10), max: parseInt(rangeMatch[2], 10) };
   }
 
-  // "X years"
-  const singleMatch = lower.match(/(\d+)\s*(?:years?|yrs?)\s*(?:of\s*)?(?:exp|experience)?/);
+  // "X years [of experience]" — avoid optional nested groups that cause ReDoS
+  const singleMatch = lower.match(/(\d{1,2})[ \t]*(?:years?|yrs?)/);
   if (singleMatch) {
     const val = parseInt(singleMatch[1], 10);
     return { min: val, max: val };
@@ -74,7 +74,7 @@ export function extractExperience(text: string): { min: number; max: number } {
     return { min: 0, max: 1 };
   }
 
-  // "senior" or "lead" imply experience
+  // title-based heuristics
   if (/\bsenior\b/.test(lower)) return { min: 5, max: 10 };
   if (/\blead\b|\bstaff\b/.test(lower)) return { min: 6, max: 12 };
   if (/\bprincipal\b|\barchitect\b/.test(lower)) return { min: 8, max: 15 };
@@ -97,14 +97,14 @@ export function extractLocation(text: string): string | null {
 export function extractSalary(text: string): number | null {
   const lower = text.toLowerCase();
 
-  // "under 12L", "12LPA", "12 lpa", "12 lakhs"
-  const lpaMatch = lower.match(/(?:under|below|max|upto|up to)?\s*(\d+(?:\.\d+)?)\s*(?:lpa|l\.?p\.?a|lakhs?|lac)/);
+  // "under 12L", "12LPA", "12 lpa", "12 lakhs" — bounded digit match avoids ReDoS
+  const lpaMatch = lower.match(/(?:under|below|max|upto|up to)?[ \t]*(\d{1,3}(?:\.\d{1,2})?)[ \t]*(?:lpa|l\.?p\.?a\b|lakhs?\b|lac\b)/);
   if (lpaMatch) {
     return parseFloat(lpaMatch[1]);
   }
 
   // "₹12L" or "INR 12L"
-  const currencyMatch = lower.match(/(?:inr|₹|rs\.?)\s*(\d+(?:\.\d+)?)\s*(?:l|lpa|lakhs?)?/);
+  const currencyMatch = lower.match(/(?:inr|₹|rs\.?)[ \t]*(\d{1,3}(?:\.\d{1,2})?)[ \t]*(?:l\b|lpa\b|lakhs?\b)?/);
   if (currencyMatch) {
     return parseFloat(currencyMatch[1]);
   }

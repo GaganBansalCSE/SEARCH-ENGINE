@@ -9,7 +9,6 @@ export class ExplanationEngine {
     const lines: string[] = ['This job matches because:'];
 
     // Skill overlap
-    const querySkillsLower = query.skills.map((s) => s.toLowerCase());
     const jobSkillsLower = job.skills.map((s) => s.toLowerCase());
     const matchedSkills = query.skills.filter((s) =>
       jobSkillsLower.includes(s.toLowerCase()),
@@ -38,10 +37,10 @@ export class ExplanationEngine {
       lines.push(`- Location: ${job.location} (query: ${query.location})`);
     }
 
-    // Semantic similarity
+    // Semantic similarity — use semPct in the Overall line
     const semPct = Math.round(result.semanticScore * 100);
     lines.push(
-      `- Role similarity: ${job.title} at ${job.company} (semantic score: ${(result.semanticScore).toFixed(2)})`,
+      `- Role similarity: ${job.title} at ${job.company} (semantic score: ${result.semanticScore.toFixed(2)})`,
     );
 
     // Experience
@@ -101,7 +100,7 @@ export class ExplanationEngine {
     const unmatchedSkills = query.skills.filter(
       (s) => !jobSkillsLower.includes(s.toLowerCase()),
     );
-    if (unmatchedSkills.length > 0 && querySkillsLower.length > 0) {
+    if (unmatchedSkills.length > 0 && query.skills.length > 0) {
       lines.push(`- Missing skills: ${unmatchedSkills.slice(0, 3).join(', ')}`);
     }
 
