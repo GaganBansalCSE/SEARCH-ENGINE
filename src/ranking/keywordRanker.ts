@@ -56,7 +56,8 @@ export class KeywordRanker {
     for (const term of queryTokens) {
       const termTf = tf.get(term) ?? 0;
       if (termTf === 0) continue;
-      const idf = this.idf.get(term) ?? Math.log(this.docCount / 1 + 1);
+      // Fallback IDF for unseen terms: treat df=1 using Robertson-Sparck Jones formula
+      const idf = this.idf.get(term) ?? Math.log((this.docCount - 1 + 0.5) / (1 + 0.5) + 1);
       const tfNorm =
         (termTf * (BM25_K1 + 1)) /
         (termTf + BM25_K1 * (1 - BM25_B + BM25_B * (docLen / (this.avgDocLen || 1))));
@@ -65,7 +66,7 @@ export class KeywordRanker {
 
     // Normalize to [0, 1]: divide by max possible score (every query term has tf=docLen)
     const maxScore = queryTokens.reduce((acc, term) => {
-      const idf = this.idf.get(term) ?? Math.log(this.docCount / 1 + 1);
+      const idf = this.idf.get(term) ?? Math.log((this.docCount - 1 + 0.5) / (1 + 0.5) + 1);
       const maxTf = BM25_K1 + 1; // when tf >> docLen
       return acc + idf * maxTf;
     }, 0);
