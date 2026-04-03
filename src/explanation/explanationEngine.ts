@@ -37,8 +37,8 @@ export class ExplanationEngine {
       lines.push(`- Location: ${job.location} (query: ${query.location})`);
     }
 
-    // Semantic similarity — use semPct in the Overall line
-    const semPct = Math.round(result.semanticScore * 100);
+    // Semantic similarity — semanticPct used in the Overall scores line
+    const semanticPct = Math.round(result.semanticScore * 100);
     lines.push(
       `- Role similarity: ${job.title} at ${job.company} (semantic score: ${result.semanticScore.toFixed(2)})`,
     );
@@ -93,7 +93,7 @@ export class ExplanationEngine {
 
     // Overall scores
     lines.push(
-      `- Overall: Semantic ${semPct}% | Keyword ${Math.round(result.keywordScore * 100)}% | Structured ${Math.round(result.structuredScore * 100)}%`,
+      `- Overall: Semantic ${semanticPct}% | Keyword ${Math.round(result.keywordScore * 100)}% | Structured ${Math.round(result.structuredScore * 100)}%`,
     );
 
     // Unmatched skills from query
