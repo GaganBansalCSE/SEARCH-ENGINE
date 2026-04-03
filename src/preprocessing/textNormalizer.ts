@@ -97,14 +97,28 @@ export function extractLocation(text: string): string | null {
 export function extractSalary(text: string): number | null {
   const lower = text.toLowerCase();
 
-  // "under 12L", "12LPA", "12 lpa", "12 lakhs" — bounded digit match avoids ReDoS
-  const lpaMatch = lower.match(/(?:under|below|max|upto|up to)?[ \t]*(\d{1,3}(?:\.\d{1,2})?)[ \t]*(?:lpa|l\.?p\.?a\b|lakhs?\b|lac\b)/);
-  if (lpaMatch) {
-    return parseFloat(lpaMatch[1]);
+  // Match patterns like "12lpa", "12 lpa", "12 lakhs", "under 12l"
+  // Use indexOf-based pre-filter + simple bounded regex to avoid ReDoS
+  const salaryKeywords = ['lpa', 'lakhs', 'lakh', 'lac'];
+  const hasSalaryKeyword = salaryKeywords.some((kw) => lower.includes(kw));
+  if (!hasSalaryKeyword && !lower.includes('inr') && !lower.includes('₹') && !lower.includes('rs.')) {
+    return null;
   }
 
-  // "₹12L" or "INR 12L"
-  const currencyMatch = lower.match(/(?:inr|₹|rs\.?)[ \t]*(\d{1,3}(?:\.\d{1,2})?)[ \t]*(?:l\b|lpa\b|lakhs?\b)?/);
+  // Simple digit extraction: find a number near a salary keyword
+  const digitMatch = lower.match(/(\d{1,3}(?:\.\d{1,2})?)\s{0,3}(?:lpa|lakh|lac)/);
+  if (digitMatch) {
+    return parseFloat(digitMatch[1]);
+  }
+
+  // "under/below/max/upto N lpa"
+  const prefixMatch = lower.match(/(?:under|below|max|upto)\s{1,5}(\d{1,3}(?:\.\d{1,2})?)/);
+  if (prefixMatch) {
+    return parseFloat(prefixMatch[1]);
+  }
+
+  // "INR/₹/Rs. N"
+  const currencyMatch = lower.match(/(?:inr|₹|rs\.)\s{0,3}(\d{1,3}(?:\.\d{1,2})?)/);
   if (currencyMatch) {
     return parseFloat(currencyMatch[1]);
   }
